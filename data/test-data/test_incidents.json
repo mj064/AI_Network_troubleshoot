@@ -1,0 +1,281 @@
+{
+  "incidents": [
+    {
+      "ticket_id": "INC-2024-1000",
+      "title": "BGP Session Flapping",
+      "severity": "P4",
+      "status": "OPEN",
+      "created_at": "2026-03-23T05:08:57Z",
+      "reported_by": "auto-monitor",
+      "affected_devices": [
+        "D0027",
+        "D0015",
+        "D0040"
+      ],
+      "symptom_summary": "3 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1001",
+      "title": "Network Latency Spike",
+      "severity": "P1",
+      "status": "IN_PROGRESS",
+      "created_at": "2026-03-25T12:08:57Z",
+      "reported_by": "auto-monitor",
+      "affected_devices": [
+        "D0020"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1002",
+      "title": "High CPU Usage on Core Router",
+      "severity": "P1",
+      "status": "RESOLVED",
+      "created_at": "2026-03-23T02:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0026"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1003",
+      "title": "Network Latency Spike",
+      "severity": "P4",
+      "status": "RESOLVED",
+      "created_at": "2026-03-23T01:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0038",
+        "D0032"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1004",
+      "title": "Interface Down - Packet Loss Detected",
+      "severity": "P1",
+      "status": "IN_PROGRESS",
+      "created_at": "2026-03-23T07:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0041"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1005",
+      "title": "Network Latency Spike",
+      "severity": "P1",
+      "status": "OPEN",
+      "created_at": "2026-03-23T16:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0032",
+        "D0020"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1006",
+      "title": "BGP Session Flapping",
+      "severity": "P4",
+      "status": "RESOLVED",
+      "created_at": "2026-03-24T19:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0026",
+        "D0014",
+        "D0030"
+      ],
+      "symptom_summary": "3 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1007",
+      "title": "High CPU Usage on Core Router",
+      "severity": "P3",
+      "status": "RESOLVED",
+      "created_at": "2026-03-24T10:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0048"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1008",
+      "title": "BGP Session Flapping",
+      "severity": "P3",
+      "status": "OPEN",
+      "created_at": "2026-03-25T08:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0043",
+        "D0030"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1009",
+      "title": "Network Latency Spike",
+      "severity": "P2",
+      "status": "RESOLVED",
+      "created_at": "2026-03-23T23:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0007",
+        "D0030"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1010",
+      "title": "Memory Utilization Critical",
+      "severity": "P3",
+      "status": "RESOLVED",
+      "created_at": "2026-03-23T06:08:57Z",
+      "reported_by": "auto-monitor",
+      "affected_devices": [
+        "D0036",
+        "D0014"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1011",
+      "title": "Device Unreachable",
+      "severity": "P1",
+      "status": "OPEN",
+      "created_at": "2026-03-25T17:08:57Z",
+      "reported_by": "auto-monitor",
+      "affected_devices": [
+        "D0009"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1012",
+      "title": "Configuration Sync Failed",
+      "severity": "P3",
+      "status": "RESOLVED",
+      "created_at": "2026-03-24T06:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0027"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1013",
+      "title": "High CPU Usage on Core Router",
+      "severity": "P2",
+      "status": "IN_PROGRESS",
+      "created_at": "2026-03-24T07:08:57Z",
+      "reported_by": "auto-monitor",
+      "affected_devices": [
+        "D0035",
+        "D0018",
+        "D0049"
+      ],
+      "symptom_summary": "3 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1014",
+      "title": "Configuration Sync Failed",
+      "severity": "P2",
+      "status": "IN_PROGRESS",
+      "created_at": "2026-03-23T13:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0020"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1015",
+      "title": "Configuration Sync Failed",
+      "severity": "P2",
+      "status": "RESOLVED",
+      "created_at": "2026-03-24T08:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0046",
+        "D0019"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1016",
+      "title": "BGP Session Flapping",
+      "severity": "P2",
+      "status": "IN_PROGRESS",
+      "created_at": "2026-03-25T12:08:57Z",
+      "reported_by": "auto-monitor",
+      "affected_devices": [
+        "D0044",
+        "D0041",
+        "D0050"
+      ],
+      "symptom_summary": "3 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1017",
+      "title": "Configuration Sync Failed",
+      "severity": "P2",
+      "status": "OPEN",
+      "created_at": "2026-03-24T18:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0045",
+        "D0002"
+      ],
+      "symptom_summary": "2 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1018",
+      "title": "Interface Down - Packet Loss Detected",
+      "severity": "P1",
+      "status": "RESOLVED",
+      "created_at": "2026-03-24T03:08:57Z",
+      "reported_by": "john.doe@company.com",
+      "affected_devices": [
+        "D0043",
+        "D0047",
+        "D0004"
+      ],
+      "symptom_summary": "3 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    },
+    {
+      "ticket_id": "INC-2024-1019",
+      "title": "Memory Utilization Critical",
+      "severity": "P1",
+      "status": "OPEN",
+      "created_at": "2026-03-25T03:08:57Z",
+      "reported_by": "jane.smith@company.com",
+      "affected_devices": [
+        "D0015"
+      ],
+      "symptom_summary": "1 device(s) showing degraded performance",
+      "user_reported_description": "System alert triggered by monitoring"
+    }
+  ]
+}

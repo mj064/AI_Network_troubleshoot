@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Web Application
+  web:
+    build: .
+    container_name: network-troubleshoot-app
+    ports:
+      - "5000:5000"
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql://network_admin:secure_password@db:5432/network_troubleshoot
+      - FLASK_APP=production_app.py
+      - DEBUG=False
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./data:/app/data
+    depends_on:
+      - db
+    networks:
+      - network-troubleshoot-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  db:
+    image: postgres:15-alpine
+    container_name: network-troubleshoot-db
+    environment:
+      - POSTGRES_USER=network_admin
+      - POSTGRES_PASSWORD=secure_password
+      - POSTGRES_DB=network_troubleshoot
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - network-troubleshoot-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U network_admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:latest
+    container_name: network-troubleshoot-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - web
+    networks:
+      - network-troubleshoot-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  network-troubleshoot-network:
+    driver: bridge

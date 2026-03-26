@@ -1,0 +1,26 @@
+{
+  "data_sources": {
+    "device_inventory": "data/test-data/test_devices.csv",
+    "incident_tickets": "data/test-data/test_incidents.json",
+    "snmp_metrics": "data/test-data/test_metrics.csv",
+    "syslog": "data/test-data/router_syslog.log",
+    "network_topology": "data/test-data/network_topology.json"
+  },
+  "thresholds": {
+    "cpu_warning": 75,
+    "cpu_critical": 90,
+    "memory_warning": 80,
+    "memory_critical": 95,
+    "packet_loss_warning": 5,
+    "packet_loss_critical": 10
+  },
+  "incident_sla": {
+    "P1": 30,
+    "P2": 60,
+    "P3": 120,
+    "P4": 240
+  },
+  "api_port": 5000,
+  "debug_mode": false,
+  "log_level": "INFO"
+}
