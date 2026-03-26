@@ -14,6 +14,7 @@ from functools import wraps
 
 from .production_models import DatabaseManager, NetworkDevice, NetworkMetric, NetworkIncident, SystemLog
 from .data_importer import DataImporter
+from ..utils.ai_analysis_service import AIIncidentAnalyzer
 
 
 # Configuration
@@ -260,39 +261,68 @@ def analyze_incident(ticket_id):
             return jsonify({'error': 'Incident not found'}), 404
         
         # Gather related data
-        affected_devices = [d.device_id for d in incident.devices]
+        affected_devices = [{'device_id': d.device_id, 'device_name': d.device_name, 'status': d.status} for d in incident.devices]
         
         # Get recent metrics for affected devices
-        recent_issues = session.query(NetworkMetric).filter(
-            NetworkMetric.device_id.in_([d.id for d in incident.devices]),
-            NetworkMetric.status != 'OK'
-        ).order_by(NetworkMetric.timestamp.desc()).limit(10).all()
-        
-        # Analysis result
-        analysis = {
-            'ticket_id': ticket_id,
-            'title': incident.title,
-            'severity': incident.severity,
-            'root_cause': incident.root_cause or 'Analysis in progress...',
-            'affected_devices': affected_devices,
-            'recent_alerts': [
+        recent_metrics = []
+        if incident.devices:
+            recent_issues = session.query(NetworkMetric).filter(
+                NetworkMetric.device_id.in_([d.id for d in incident.devices]),
+                NetworkMetric.status != 'OK'
+            ).order_by(NetworkMetric.timestamp.desc()).limit(20).all()
+            
+            recent_metrics = [
                 {
                     'device': m.device.device_id,
                     'metric': m.metric_name,
-                    'value': m.metric_value,
-                    'status': m.status
+                    'value': round(m.metric_value, 2),
+                    'unit': m.unit,
+                    'status': m.status,
+                    'threshold_warn': m.threshold_warn,
+                    'threshold_crit': m.threshold_crit,
+                    'timestamp': m.timestamp.isoformat() if m.timestamp else None
                 } for m in recent_issues
-            ],
-            'recommended_actions': [
-                'Check device CPU and memory usage',
-                'Verify network connectivity',
-                'Review recent configuration changes',
-                'Check system logs for errors'
-            ],
-            'estimated_resolution_time': '30-60 minutes'
+            ]
+        
+        # Prepare data for AI analyzer
+        incident_data = {
+            'ticket_id': incident.ticket_id,
+            'title': incident.title,
+            'description': incident.description or '',
+            'severity': incident.severity,
+            'status': incident.status,
+            'created_at': incident.created_at.isoformat() if incident.created_at else None,
+            'symptom_summary': incident.symptom_summary or '',
+            'root_cause': incident.root_cause or '',
+            'alerts_triggered': incident.alerts_triggered or [],
+            'related_tickets': incident.related_tickets or [],
+            'devices': affected_devices,
+            'metrics': recent_metrics
+        }
+        
+        # Use AI analyzer for intelligent analysis
+        ai_analyzer = AIIncidentAnalyzer()
+        ai_analysis = ai_analyzer.analyze_incident(incident_data)
+        
+        # Combine with database data
+        analysis = {
+            'ticket_id': ticket_id,
+            'title': incident.title,
+            'description': incident.description,
+            'severity': incident.severity,
+            'status': incident.status,
+            'created_at': incident.created_at.isoformat() if incident.created_at else None,
+            'resolved_at': incident.resolved_at.isoformat() if incident.resolved_at else None,
+            'ai_analysis': ai_analysis,
+            'affected_devices': affected_devices,
+            'recent_metrics': recent_metrics,
+            'database_root_cause': incident.root_cause or 'To be determined',
+            'related_incidents': incident.related_tickets or []
         }
         
         return jsonify(analysis)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     finally:
         session.close()
 

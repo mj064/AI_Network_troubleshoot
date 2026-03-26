@@ -1158,6 +1158,23 @@
         </div>
     </div>
 
+    <!-- AI INCIDENT ANALYSIS MODAL -->
+    <div id="aiAnalysisModal" class="modal">
+        <div class="modal-content" style="max-height: 90vh; overflow-y: auto; width: 90%; max-width: 1000px;">
+            <div class="modal-header">
+                <span id="analysisTicketId">AI Incident Analysis</span>
+                <button class="close-btn" onclick="document.getElementById('aiAnalysisModal').classList.remove('active')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="aiAnalysisContent" style="padding: 1.5rem;">
+                <div style="text-align: center; color: #94a3b8;">
+                    <i class="fas fa-spinner fa-spin"></i> Loading AI Analysis...
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = 'http://localhost:5000/api';
         let incidentChart, statusChart;
@@ -1334,6 +1351,8 @@
                 
                 res.data.incidents.forEach(incident => {
                     const row = document.createElement('tr');
+                    row.style.cursor = 'pointer';
+                    row.style.transition = 'background-color 0.2s';
                     row.innerHTML = `
                         <td>${incident.ticket_id}</td>
                         <td>${incident.title}</td>
@@ -1341,11 +1360,275 @@
                         <td><span class="badge ${incident.status === 'OPEN' ? 'badge-danger' : incident.status === 'IN_PROGRESS' ? 'badge-warning' : 'badge-success'}">${incident.status}</span></td>
                         <td>${incident.affected_devices?.join(', ') || 'N/A'}</td>
                     `;
+                    
+                    // Add hover effect
+                    row.addEventListener('mouseenter', () => {
+                        row.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+                    });
+                    row.addEventListener('mouseleave', () => {
+                        row.style.backgroundColor = 'transparent';
+                    });
+                    
+                    // Add click handler to show AI analysis
+                    row.addEventListener('click', () => {
+                        showIncidentAIAnalysis(incident.ticket_id);
+                    });
+                    
                     tbody.appendChild(row);
                 });
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        // ========== AI ANALYSIS FUNCTIONS ==========
+        async function showIncidentAIAnalysis(ticketId) {
+            try {
+                // Show the modal
+                document.getElementById('aiAnalysisModal').classList.add('active');
+                
+                // Update the header with ticket ID
+                document.getElementById('analysisTicketId').textContent = `🤖 AI Analysis: ${ticketId}`;
+                
+                // Show loading state
+                const contentDiv = document.getElementById('aiAnalysisContent');
+                contentDiv.innerHTML = '<div style="text-align: center; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Loading AI Analysis...</div>';
+                
+                // Fetch AI analysis from server
+                const response = await axios.get(`${API_BASE}/incidents/${ticketId}/analysis`);
+                const analysis = response.data;
+                
+                // Display the analysis
+                displayAIAnalysis(analysis);
+            } catch (error) {
+                console.error('Error fetching AI analysis:', error);
+                document.getElementById('aiAnalysisContent').innerHTML = `
+                    <div style="color: #ef4444;">
+                        <i class="fas fa-exclamation-circle"></i> Error loading AI analysis: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function displayAIAnalysis(analysis) {
+            const contentDiv = document.getElementById('aiAnalysisContent');
+            const aiData = analysis.ai_analysis || {};
+            const severityInfo = aiData.severity_details || {};
+            
+            let html = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                    <!-- Left Column -->
+                    <div>
+                        <!-- Severity & Status -->
+                        <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong>Severity:</strong>
+                                <span class="badge badge-${analysis.severity?.toLowerCase() || 'p4'}" style="font-size: 0.9rem;">${analysis.severity || 'P4'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong>Status:</strong>
+                                <span class="badge ${analysis.status === 'OPEN' ? 'badge-danger' : analysis.status === 'IN_PROGRESS' ? 'badge-warning' : 'badge-success'}">${analysis.status || 'OPEN'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <strong>Urgency:</strong>
+                                <span style="color: ${severityInfo.urgency === 'IMMEDIATE' ? '#ef4444' : severityInfo.urgency === 'HIGH' ? '#f59e0b' : '#10b981'};">
+                                    ${severityInfo.urgency || 'N/A'}
+                                </span>
+                            </div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.5rem;">
+                                <i class="fas fa-info-circle"></i> ${severityInfo.business_impact || 'See details'}<br/>
+                                Response Target: ${severityInfo.response_time || 'N/A'}
+                            </div>
+                        </div>
+
+                        <!-- Root Cause Analysis -->
+                        <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h4 style="margin-top: 0; color: #3b82f6;"><i class="fas fa-search"></i> Root Cause Analysis</h4>
+                            <div style="background: #0f172a; padding: 0.75rem; border-radius: 0.375rem; margin: 0.5rem 0;">
+                                <strong>Primary Cause:</strong><br/>
+                                <span style="color: #f0f9ff;">${aiData.root_cause_analysis?.primary_cause || 'Analysis in progress'}</span>
+                            </div>
+                            <div style="font-size: 0.85rem; margin: 0.5rem 0;">
+                                <strong>Confidence:</strong> 
+                                <span style="color: ${aiData.root_cause_analysis?.confidence === 'High' ? '#10b981' : aiData.root_cause_analysis?.confidence === 'Medium' ? '#f59e0b' : '#ef4444'};">
+                                    ${aiData.root_cause_analysis?.confidence || 'Medium'}
+                                </span>
+                            </div>
+                            ${aiData.root_cause_analysis?.affected_component ? `
+                                <div style="font-size: 0.85rem; margin: 0.5rem 0;">
+                                    <strong>Affected Component:</strong> ${aiData.root_cause_analysis.affected_component}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Detected Issues -->
+                        ${formatDetectedIssues(aiData.detected_issues)}
+                    </div>
+
+                    <!-- Right Column -->
+                    <div>
+                        <!-- Recommended Actions -->
+                        <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h4 style="margin-top: 0; color: #10b981;"><i class="fas fa-check-circle"></i> Immediate Actions</h4>
+                            <ol style="margin: 0; padding-left: 1.5rem;">
+                                ${(aiData.recommended_actions || []).map(action => `
+                                    <li style="margin-bottom: 0.5rem; color: #e2e8f0;">${action}</li>
+                                `).join('')}
+                            </ol>
+                        </div>
+
+                        <!-- Escalation Info -->
+                        ${formatEscalationInfo(aiData.escalation_needed)}
+
+                        <!-- Resolution Estimate -->
+                        <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <strong><i class="fas fa-clock"></i> Estimated Resolution Time:</strong><br/>
+                            <span style="color: #3b82f6; font-size: 1.1rem;">${aiData.estimated_resolution_time || '30-60 minutes'}</span>
+                        </div>
+
+                        <!-- Alerts Summary -->
+                        ${formatAlertsSummary(aiData.alerts_summary)}
+                    </div>
+                </div>
+
+                <!-- Remediation Steps -->
+                ${formatRemediationSteps(aiData.remediation_steps)}
+
+                <!-- Secondary Issues -->
+                ${formatSecondaryIssues(aiData.root_cause_analysis?.secondary_causes)}
+
+                <!-- Prevention Measures -->
+                ${formatPreventionMeasures(aiData.prevention_measures)}
+
+                <!-- Affected Devices -->
+                ${formatAffectedDevices(aiData.affected_devices)}
+
+                <!-- Confidence Score -->
+                <div style="margin-top: 1rem; padding: 1rem; background: #1e293b; border-radius: 0.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span><strong>AI Analysis Confidence:</strong></span>
+                        <div style="width: 200px; height: 20px; background: #0f172a; border-radius: 10px; overflow: hidden;">
+                            <div style="width: ${aiData.confidence_score || 50}%; height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); transition: width 0.3s;">
+                            </div>
+                        </div>
+                        <span>${Math.round(aiData.confidence_score || 50)}%</span>
+                    </div>
+                </div>
+            `;
+            
+            contentDiv.innerHTML = html;
+        }
+
+        function formatDetectedIssues(issues) {
+            if (!issues || issues.length === 0) return '';
+            
+            return `
+                <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem;">
+                    <h4 style="margin-top: 0; color: #fbbf24;"><i class="fas fa-exclamation-triangle"></i> Detected Issues</h4>
+                    ${issues.map((issue, idx) => `
+                        <div style="background: #0f172a; padding: 0.75rem; margin-bottom: 0.5rem; border-left: 3px solid ${idx === 0 ? '#ef4444' : '#f59e0b'}; border-radius: 0.375rem;">
+                            <div style="font-weight: bold; color: #f0f9ff;">${issue.issue_type.replace(/_/g, ' ').toUpperCase()}</div>
+                            <div style="font-size: 0.85rem; color: #cbd5e1;">Probability: ${Math.round(issue.probability)}%</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.25rem;">
+                                <strong>Probable Causes:</strong>
+                                <ul style="margin: 0.25rem 0; padding-left: 1.5rem;">
+                                    ${(issue.probable_causes || []).slice(0, 2).map(cause => `<li>${cause}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function formatEscalationInfo(escalation) {
+            if (!escalation || !escalation.needed) return '';
+            
+            return `
+                <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 4px solid #ef4444;">
+                    <h4 style="margin-top: 0; color: #ef4444;"><i class="fas fa-bell"></i> Escalation Required</h4>
+                    <div style="font-size: 0.9rem;">
+                        <strong>Urgency:</strong> <span style="color: #ef4444;">${escalation.urgency}</span><br/>
+                        <strong>Escalate To:</strong> ${(escalation.teams || []).join(', ') || 'N/A'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatAlertsSummary(alertsSummary) {
+            if (!alertsSummary) return '';
+            
+            return `
+                <div style="background: #1e293b; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <h4 style="margin-top: 0; color: #f59e0b;"><i class="fas fa-exclamation"></i> Alerts Triggered</h4>
+                    <div style="font-size: 0.9rem;">
+                        <strong>Total:</strong> ${alertsSummary.count}<br/>
+                        <strong>Types:</strong> ${Object.entries(alertsSummary.types || {}).map(([type, count]) => `${type}(${count})`).join(', ') || 'None'}
+                    </div>
+                </div>
+            `;
+        }
+
+        function formatRemediationSteps(steps) {
+            if (!steps || steps.length === 0) return '';
+            
+            return `
+                <div style="margin-top: 1.5rem; background: #1e293b; padding: 1rem; border-radius: 0.5rem;">
+                    <h4 style="margin-top: 0; color: #10b981;"><i class="fas fa-wrench"></i> Remediation Steps</h4>
+                    <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        ${steps.slice(0, 6).map((step, idx) => `
+                            <li style="margin-bottom: 0.5rem; color: #e2e8f0; line-height: 1.5;">${step}</li>
+                        `).join('')}
+                    </ol>
+                </div>
+            `;
+        }
+
+        function formatSecondaryIssues(secondaryCauses) {
+            if (!secondaryCauses || secondaryCauses.length === 0) return '';
+            
+            return `
+                <div style="margin-top: 1.5rem; background: #1e293b; padding: 1rem; border-radius: 0.5rem;">
+                    <h4 style="margin-top: 0; color: #f59e0b;"><i class="fas fa-link"></i> Secondary Contributing Factors</h4>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        ${secondaryCauses.map(cause => `
+                            <li style="margin-bottom: 0.5rem; color: #e2e8f0;">${cause}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function formatPreventionMeasures(measures) {
+            if (!measures || measures.length === 0) return '';
+            
+            return `
+                <div style="margin-top: 1.5rem; background: #1e293b; padding: 1rem; border-radius: 0.5rem;">
+                    <h4 style="margin-top: 0; color: #a78bfa;"><i class="fas fa-shield-alt"></i> Prevention Measures (Future)</h4>
+                    <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                        ${measures.map(measure => `
+                            <li style="margin-bottom: 0.5rem; color: #e2e8f0;">${measure}</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+
+        function formatAffectedDevices(devices) {
+            if (!devices || devices.length === 0) return '';
+            
+            return `
+                <div style="margin-top: 1.5rem; background: #1e293b; padding: 1rem; border-radius: 0.5rem;">
+                    <h4 style="margin-top: 0; color: #06b6d4;"><i class="fas fa-server"></i> Affected Devices</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
+                        ${devices.map(device => `
+                            <div style="background: #0f172a; padding: 0.5rem; border-radius: 0.375rem; font-size: 0.85rem; color: #cbd5e1;">
+                                <i class="fas fa-server"></i> ${typeof device === 'string' ? device : device.device_name || device.device_id || device}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
         }
 
         // ========== LOAD METRICS ==========
