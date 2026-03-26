@@ -596,6 +596,10 @@
                     <i class="fas fa-cogs"></i>
                     <span>System</span>
                 </div>
+                <div class="nav-item" onclick="showPage('assistant', event)">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
+                </div>
 
                 <div style="margin-top: auto; border-top: 1px solid var(--border); padding-top: 1rem;">
                     <div class="nav-item" onclick="document.getElementById('importModal').classList.add('active')">
@@ -1127,6 +1131,57 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- AI ASSISTANT PAGE -->
+                <div id="assistant" class="page">
+                    <div class="chart-card" style="margin-bottom: 1rem;">
+                        <h3><i class="fas fa-robot"></i> Network AI Assistant (RAG)</h3>
+                        <p style="color: #94a3b8; margin-bottom: 1rem;">Ask grounded questions about incidents, devices, and metrics.</p>
+                        <div style="display: grid; grid-template-columns: 1fr auto; gap: 0.75rem;">
+                            <input id="assistantQuestion" type="text" placeholder="Example: What are the top open P1 incidents and likely causes?" style="width: 100%; padding: 0.75rem; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 0.375rem;" />
+                            <button id="assistantAskBtn" class="btn btn-primary" style="padding: 0.75rem 1rem;">Ask</button>
+                        </div>
+                        <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            <button class="btn btn-secondary" onclick="askPresetQuestion('Which incidents are highest priority right now?')">Top Incidents</button>
+                            <button class="btn btn-secondary" onclick="askPresetQuestion('Show devices with degraded or down status')">Device Health</button>
+                            <button class="btn btn-secondary" onclick="askPresetQuestion('Summarize non-OK metrics by device')">Metric Summary</button>
+                        </div>
+                    </div>
+
+                    <div class="chart-card" style="margin-bottom: 1rem;">
+                        <h4 style="margin-bottom: 0.75rem;">Assistant Response</h4>
+                        <div id="assistantResponse" style="white-space: pre-wrap; line-height: 1.5; color: #e2e8f0; min-height: 80px;">Ask a question to get a grounded answer.</div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
+                            <div style="background: #0f172a; padding: 0.75rem; border-radius: 0.375rem;">
+                                <div style="font-size: 0.8rem; color: #94a3b8;">Answer Confidence</div>
+                                <div id="assistantConfidence" style="font-size: 1.2rem; font-weight: 700;">0%</div>
+                            </div>
+                            <div style="background: #0f172a; padding: 0.75rem; border-radius: 0.375rem;">
+                                <div style="font-size: 0.8rem; color: #94a3b8;">Retrieval Confidence</div>
+                                <div id="assistantRetrievalConfidence" style="font-size: 1.2rem; font-weight: 700;">0%</div>
+                            </div>
+                            <div style="background: #0f172a; padding: 0.75rem; border-radius: 0.375rem;">
+                                <div style="font-size: 0.8rem; color: #94a3b8;">Context Chunks</div>
+                                <div id="assistantEvidenceCount" style="font-size: 1.2rem; font-weight: 700;">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-section">
+                        <div class="table-header">Retrieved Evidence</div>
+                        <table id="assistantEvidenceTable">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>ID</th>
+                                    <th>Score</th>
+                                    <th>Snippet</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1210,6 +1265,7 @@
                 if (page === 'alerts') loadAlerts();
                 if (page === 'reports') loadReports();
                 if (page === 'system') loadSystem();
+                if (page === 'assistant') loadAssistant();
             } catch (err) {
                 console.error('Navigation error:', err);
             }
@@ -1662,6 +1718,78 @@
                 });
             } catch (e) {
                 console.error(e);
+            }
+        }
+
+        // ========== AI ASSISTANT (RAG CHAT) ==========
+        function loadAssistant() {
+            const askBtn = document.getElementById('assistantAskBtn');
+            const questionInput = document.getElementById('assistantQuestion');
+
+            if (!askBtn || !questionInput) return;
+
+            askBtn.onclick = async () => {
+                const q = (questionInput.value || '').trim();
+                if (!q) {
+                    alert('Please enter a question.');
+                    return;
+                }
+                await askAssistant(q);
+            };
+
+            questionInput.onkeydown = async (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const q = (questionInput.value || '').trim();
+                    if (q) await askAssistant(q);
+                }
+            };
+        }
+
+        async function askPresetQuestion(q) {
+            const questionInput = document.getElementById('assistantQuestion');
+            if (questionInput) questionInput.value = q;
+            await askAssistant(q);
+        }
+
+        async function askAssistant(question) {
+            const responseDiv = document.getElementById('assistantResponse');
+            const evidenceTbody = document.querySelector('#assistantEvidenceTable tbody');
+
+            responseDiv.textContent = 'Thinking with retrieved context...';
+            evidenceTbody.innerHTML = '<tr><td colspan="4" style="color:#94a3b8;">Loading...</td></tr>';
+
+            try {
+                const res = await axios.post(`${API_BASE}/ai/chat`, { question });
+                const data = res.data || {};
+
+                responseDiv.textContent = data.answer || 'No answer generated.';
+
+                document.getElementById('assistantConfidence').textContent = `${Math.round(data.confidence || 0)}%`;
+                document.getElementById('assistantRetrievalConfidence').textContent = `${Math.round(data.retrieval_confidence || 0)}%`;
+                document.getElementById('assistantEvidenceCount').textContent = (data.evidence || []).length;
+
+                const evidence = data.evidence || [];
+                if (evidence.length === 0) {
+                    evidenceTbody.innerHTML = '<tr><td colspan="4" style="color:#94a3b8;">No evidence matched. Try a more specific question.</td></tr>';
+                    return;
+                }
+
+                evidenceTbody.innerHTML = '';
+                evidence.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.doc_type || 'unknown'}</td>
+                        <td>${item.id || '-'}</td>
+                        <td>${Math.round(item.score || 0)}%</td>
+                        <td>${item.snippet || ''}</td>
+                    `;
+                    evidenceTbody.appendChild(row);
+                });
+            } catch (e) {
+                console.error('AI Assistant error:', e);
+                responseDiv.textContent = `Assistant request failed: ${e.response?.data?.error || e.message}`;
+                evidenceTbody.innerHTML = '<tr><td colspan="4" style="color:#ef4444;">Error fetching evidence.</td></tr>';
             }
         }
 

@@ -15,6 +15,7 @@ from functools import wraps
 from .production_models import DatabaseManager, NetworkDevice, NetworkMetric, NetworkIncident, SystemLog
 from .data_importer import DataImporter
 from ..utils.ai_analysis_service import AIIncidentAnalyzer
+from ..utils.rag_chat_service import NetworkRAGAssistant
 
 
 # Configuration
@@ -33,6 +34,7 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 # Database initialization
 db_manager = DatabaseManager(DATABASE_URL)
 data_importer = DataImporter(db_manager)
+rag_assistant = NetworkRAGAssistant()
 
 # Create uploads directory
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -323,6 +325,44 @@ def analyze_incident(ticket_id):
         return jsonify(analysis)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/ai/rag/search', methods=['POST'])
+def rag_search():
+    """Retrieve most relevant context chunks for a question."""
+    data = request.get_json() or {}
+    question = (data.get('question') or '').strip()
+
+    if not question:
+        return jsonify({'error': 'question is required'}), 400
+
+    session = db_manager.get_session()
+    try:
+        retrieval = rag_assistant.retrieve(session, question, top_k=8)
+        return jsonify(retrieval)
+    except Exception as e:
+        return jsonify({'error': 'RAG retrieval failed', 'detail': str(e)[:150]}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/ai/chat', methods=['POST'])
+def ai_chat():
+    """Chat endpoint for incident/device/metric Q&A using local RAG grounding."""
+    data = request.get_json() or {}
+    question = (data.get('question') or '').strip()
+
+    if not question:
+        return jsonify({'error': 'question is required'}), 400
+
+    session = db_manager.get_session()
+    try:
+        response = rag_assistant.answer(session, question)
+        return jsonify(response)
+    except Exception as e:
+        return jsonify({'error': 'AI chat failed', 'detail': str(e)[:150]}), 500
     finally:
         session.close()
 

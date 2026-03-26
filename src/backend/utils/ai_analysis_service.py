@@ -253,6 +253,7 @@ class AIIncidentAnalyzer:
         
         # Calculate confidence score
         confidence = self._calculate_confidence(detected_issues, alerts_triggered, metrics)
+        confidence_breakdown = self._confidence_breakdown(detected_issues, alerts_triggered, metrics, incident)
         
         # Generate analysis
         analysis = {
@@ -279,6 +280,7 @@ class AIIncidentAnalyzer:
             'escalation_needed': self._check_escalation(severity, detected_issues),
             'prevention_measures': self._get_prevention_measures(detected_issues),
             'confidence_score': confidence,
+            'confidence_breakdown': confidence_breakdown,
             'additional_context': self._get_additional_context(incident)
         }
         
@@ -537,15 +539,48 @@ class AIIncidentAnalyzer:
     
     def _calculate_confidence(self, issues: List, alerts: List, metrics: List) -> float:
         """Calculate overall confidence score"""
-        confidence = 50.0
-        
-        if issues:
-            confidence += issues[0].get('probability', 0) * 0.3
-        
-        if alerts:
-            confidence += min(30, len(alerts) * 5)
-        
-        if metrics:
-            confidence += min(20, len(metrics) * 2)
-        
-        return min(100, confidence)
+        quality = self._calculate_data_quality(issues, alerts, metrics)
+        signal = self._calculate_signal_strength(issues, alerts, metrics)
+        # Blend a stable base confidence with evidence quality and signal strength.
+        confidence = 30.0 + (quality * 0.35) + (signal * 0.35)
+        return round(min(100.0, max(0.0, confidence)), 2)
+
+    def _calculate_data_quality(self, issues: List, alerts: List, metrics: List) -> float:
+        """Score how complete the available evidence is (0-100)."""
+        issue_quality = min(100.0, len(issues) * 28.0)
+        alert_quality = min(100.0, len(alerts) * 18.0)
+        metric_quality = min(100.0, len(metrics) * 6.0)
+        return round((issue_quality * 0.45) + (alert_quality * 0.20) + (metric_quality * 0.35), 2)
+
+    def _calculate_signal_strength(self, issues: List, alerts: List, metrics: List) -> float:
+        """Score how strong and consistent the detected issue signals are (0-100)."""
+        if not issues:
+            return 10.0
+
+        top_probability = issues[0].get('probability', 0)
+        top_score = min(100.0, float(top_probability))
+
+        secondary_bonus = 0.0
+        if len(issues) > 1:
+            secondary_bonus = min(20.0, float(issues[1].get('probability', 0)) * 0.2)
+
+        metric_pressure = min(25.0, len([m for m in metrics if str(m.get('status', '')).upper() == 'CRITICAL']) * 4.0)
+        alert_pressure = min(20.0, len(alerts) * 3.0)
+
+        signal = top_score * 0.55 + secondary_bonus + metric_pressure + alert_pressure
+        return round(min(100.0, signal), 2)
+
+    def _confidence_breakdown(self, issues: List, alerts: List, metrics: List, incident: Dict) -> Dict[str, Any]:
+        """Return confidence component details for explainability."""
+        data_quality = self._calculate_data_quality(issues, alerts, metrics)
+        signal_strength = self._calculate_signal_strength(issues, alerts, metrics)
+        text_richness = min(100.0, len((incident.get('title', '') + ' ' + incident.get('description', '') + ' ' + incident.get('symptom_summary', '')).strip()) * 0.6)
+
+        return {
+            'data_quality': round(data_quality, 2),
+            'signal_strength': round(signal_strength, 2),
+            'text_richness': round(text_richness, 2),
+            'issues_detected': len(issues),
+            'alerts_count': len(alerts),
+            'metrics_count': len(metrics),
+        }
